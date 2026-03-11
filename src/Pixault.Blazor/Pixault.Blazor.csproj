@@ -5,12 +5,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Pixault.Blazor</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <PackageId>Pixault.Blazor</PackageId>
     <Title>Pixault.Blazor</Title>
     <Authors>Endpoint Systems</Authors>
+    <Company>Endpoint Systems</Company>
+    <Copyright>Copyright (c) Endpoint Systems. All rights reserved.</Copyright>
     <Description>Blazor components for the Pixault image CDN. Drop-in uploader, gallery, image detail, transform manager, and plugin marketplace.</Description>
-    <PackageId>Pixault.Blazor</PackageId>
+    <PackageTags>pixault;blazor;image;upload;gallery;components</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://pixault.io</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/EndpointSystems/pixault-blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup Label="Package assets">
+    <None Include="../../icon.png" Pack="true" PackagePath="" />
+    <None Include="../../README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Pixault.Client" />
