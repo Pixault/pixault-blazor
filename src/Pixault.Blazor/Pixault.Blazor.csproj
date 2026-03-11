@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Pixault.Blazor</RootNamespace>
+    <Title>Pixault.Blazor</Title>
+    <Authors>Endpoint Systems</Authors>
+    <Description>Blazor components for the Pixault image CDN. Drop-in uploader, gallery, image detail, transform manager, and plugin marketplace.</Description>
+    <PackageId>Pixault.Blazor</PackageId>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Pixault.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Radzen.Blazor" />
+  </ItemGroup>
+
+</Project>

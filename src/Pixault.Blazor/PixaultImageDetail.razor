@@ -1,0 +1,344 @@
+@namespace Pixault.Blazor
+@using Pixault.Client
+
+@if (Image is not null)
+{
+    <RadzenCard Style="@($"--pxlt-accent: {AccentColor}; padding: 1.5rem;")">
+
+        @* ── Preview ── *@
+        <div style="background: #f9fafb; border-radius: 0.75rem; overflow: hidden; display: flex; align-items: center; justify-content: center; max-height: 320px; margin-bottom: 1rem;">
+            @if (Image.IsVideo)
+            {
+                <video src="@VideoUrl" controls preload="metadata"
+                       poster="@PreviewUrl"
+                       style="max-width: 100%; max-height: 320px; border-radius: 0.5rem;">
+                    Your browser does not support the video tag.
+                </video>
+            }
+            else
+            {
+                <img src="@PreviewUrl" alt="@(Image.Name ?? Image.OriginalFileName)"
+                     style="border-radius: 0.5rem; max-width: 100%; max-height: 320px; object-fit: contain;" />
+            }
+        </div>
+
+        @* ── Info bar ── *@
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.375rem;">
+                <code style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.8125rem; background: #f9fafb; padding: 0.25rem 0.5rem; border-radius: 6px; color: #6b7280; word-break: break-all;">@Image.ImageId</code>
+                <RadzenButton Icon="content_copy"
+                              ButtonStyle="ButtonStyle.Light"
+                              Size="ButtonSize.ExtraSmall"
+                              title="Copy ID"
+                              Click="@(args => CopyToClipboard(Image.ImageId))" />
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.75rem; color: #6b7280;">
+                <span>@Image.Width &times; @Image.Height</span>
+                @if (Image.IsVideo && Image.Duration.HasValue)
+                {
+                    <span>@Image.FormattedDuration</span>
+                }
+                <span>@Image.FormattedSize</span>
+                <span>@Image.ContentType</span>
+            </div>
+        </div>
+
+        @* ── Video URL (for videos) / URL Builder (for images) ── *@
+        @if (Image.IsVideo)
+        {
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Video URL</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem;">
+                    <code style="flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all;">@VideoUrl</code>
+                    <RadzenButton Icon="content_copy"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.ExtraSmall"
+                                  title="Copy URL"
+                                  Click="@(args => CopyToClipboard(VideoUrl))" />
+                </div>
+                @if (Image.ThumbnailId is not null)
+                {
+                    <div style="margin-top: 0.75rem;">
+                        <h4 style="margin: 0 0 0.375rem 0; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Thumbnail</h4>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem;">
+                            <code style="flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all;">@ThumbnailUrl</code>
+                            <RadzenButton Icon="content_copy"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Size="ButtonSize.ExtraSmall"
+                                          title="Copy thumbnail URL"
+                                          Click="@(args => CopyToClipboard(ThumbnailUrl))" />
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">URL Builder</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Width</label>
+                        <RadzenNumeric TValue="int?" @bind-Value="_urlWidth" Min="1" Max="4096" Placeholder="auto" Style="width: 100%;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Height</label>
+                        <RadzenNumeric TValue="int?" @bind-Value="_urlHeight" Min="1" Max="4096" Placeholder="auto" Style="width: 100%;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Quality</label>
+                        <RadzenNumeric TValue="int?" @bind-Value="_urlQuality" Min="1" Max="100" Placeholder="85" Style="width: 100%;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Format</label>
+                        <RadzenDropDown TValue="string" @bind-Value="_urlFormat" Style="width: 100%;"
+                                        Data="@_formatOptions" TextProperty="Text" ValueProperty="Value" />
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem;">
+                    <code style="flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all;">@GeneratedUrl</code>
+                    <RadzenButton Icon="content_copy"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.ExtraSmall"
+                                  title="Copy URL"
+                                  Click="@(args => CopyToClipboard(GeneratedUrl))" />
+                </div>
+            </div>
+        }
+
+        @* ── Metadata ── *@
+        <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <h3 style="margin: 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Metadata</h3>
+                @if (!_editing)
+                {
+                    <RadzenButton Text="Edit metadata"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Size="ButtonSize.Small"
+                                  Click="@(args => StartEdit())" />
+                }
+            </div>
+
+            @if (_editing)
+            {
+                @* ── Content & SEO ── *@
+                <RadzenFieldset Text="Content & SEO" AllowCollapse="true" Style="margin-bottom: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Name</label>
+                            <RadzenTextBox @bind-Value="_editName" Placeholder="@(Image.IsVideo ? "Video name" : "Image name")" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Description</label>
+                            <RadzenTextArea @bind-Value="_editDescription" Rows="2" Placeholder="Description" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Alt text</label>
+                            <RadzenTextBox @bind-Value="_editCaption" Placeholder="Accessible alt text" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Category</label>
+                            <RadzenTextBox @bind-Value="_editCategory" Placeholder="e.g. portfolio, headshot" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Folder</label>
+                            <RadzenTextBox @bind-Value="_editFolder" Placeholder="e.g. portfolio/landscapes" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Author</label>
+                            <RadzenTextBox @bind-Value="_editAuthor" Placeholder="Creator / artist" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Keywords</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.25rem;">
+                                @foreach (var kw in _editKeywords)
+                                {
+                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #eff6ff; color: #1d4ed8; font-size: 0.75rem; padding: 0.125rem 0.5rem; border-radius: 9999px;">
+                                        @kw
+                                        <RadzenButton Icon="close" Size="ButtonSize.ExtraSmall" Variant="Variant.Text"
+                                                      ButtonStyle="ButtonStyle.Info"
+                                                      Click="@(() => _editKeywords.Remove(kw))" />
+                                    </span>
+                                }
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <RadzenTextBox @bind-Value="_newKeyword" Placeholder="Add keyword..." Style="flex: 1;" />
+                                <RadzenButton Icon="add" Size="ButtonSize.Small" Click="@(args => AddKeyword())" />
+                            </div>
+                        </div>
+                        <div>
+                            <RadzenCheckBox @bind-Value="_editRepresentativeOfPage" Name="repOfPage" />
+                            <RadzenLabel Text="Representative image of page (Schema.org)" Component="repOfPage"
+                                         Style="font-size: 0.8125rem; color: #6b7280; margin-left: 0.25rem;" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+
+                @* ── Copyright & Licensing ── *@
+                <RadzenFieldset Text="Copyright & Licensing" AllowCollapse="true" Collapsed="true" Style="margin-bottom: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Copyright Holder</label>
+                            <RadzenTextBox @bind-Value="_editCopyrightHolder" Placeholder="e.g. Jane Doe" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Copyright Year</label>
+                            <RadzenNumeric TValue="int?" @bind-Value="_editCopyrightYear" Min="1900" Max="2099" Placeholder="e.g. 2026" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">License URL</label>
+                            <RadzenTextBox @bind-Value="_editLicense" Placeholder="https://creativecommons.org/licenses/..." Style="width: 100%;" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+
+                @* ── Dates ── *@
+                <RadzenFieldset Text="Dates" AllowCollapse="true" Collapsed="true" Style="margin-bottom: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Date Created</label>
+                            <RadzenDatePicker TValue="DateTimeOffset?" @bind-Value="_editDateCreated" DateFormat="yyyy-MM-dd" Style="width: 100%;" />
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Date Published</label>
+                            <RadzenDatePicker TValue="DateTimeOffset?" @bind-Value="_editDatePublished" DateFormat="yyyy-MM-dd" Style="width: 100%;" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+
+                @* ── Location ── *@
+                <RadzenFieldset Text="Location" AllowCollapse="true" Collapsed="true" Style="margin-bottom: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Location Name</label>
+                            <RadzenTextBox @bind-Value="_editLocationName" Placeholder="e.g. Brooklyn, NY" Style="width: 100%;" />
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Latitude</label>
+                                <RadzenNumeric TValue="double?" @bind-Value="_editLocationLat" Min="-90" Max="90" Style="width: 100%;" />
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Longitude</label>
+                                <RadzenNumeric TValue="double?" @bind-Value="_editLocationLng" Min="-180" Max="180" Style="width: 100%;" />
+                            </div>
+                        </div>
+                    </div>
+                </RadzenFieldset>
+
+                @* ── Custom Tags ── *@
+                <RadzenFieldset Text="Custom Tags" AllowCollapse="true" Collapsed="true" Style="margin-bottom: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        @foreach (var (key, value) in _editTags)
+                        {
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <code style="min-width: 100px; padding: 0.25rem 0.5rem; background: #f1f5f9; border-radius: 4px; font-size: 0.8125rem;">@key</code>
+                                <RadzenTextBox Value="@value" Style="flex: 1;"
+                                               Change="@(v => _editTags[key] = (string)v)" />
+                                <RadzenButton Icon="delete" Size="ButtonSize.ExtraSmall" Variant="Variant.Text"
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Click="@(() => _editTags.Remove(key))" />
+                            </div>
+                        }
+                        <div style="display: flex; gap: 0.5rem;">
+                            <RadzenTextBox @bind-Value="_newTagKey" Placeholder="Key" Style="width: 120px;" />
+                            <RadzenTextBox @bind-Value="_newTagValue" Placeholder="Value" Style="flex: 1;" />
+                            <RadzenButton Icon="add" Size="ButtonSize.Small" Click="@(args => AddTag())" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+
+                @* ── EXIF (read-only with strip button) ── *@
+                @if (Image.ExifData?.Count > 0)
+                {
+                    <RadzenFieldset Text="EXIF Data" AllowCollapse="true" Collapsed="true" Style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <RadzenButton Text="@(_strippingExif ? "Stripping..." : "Strip from Original")"
+                                          Size="ButtonSize.ExtraSmall"
+                                          Variant="Variant.Outlined"
+                                          ButtonStyle="ButtonStyle.Warning"
+                                          IsBusy="@_strippingExif"
+                                          Click="@(args => StripExifAsync())" />
+                        </div>
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.375rem 0.75rem; font-size: 0.8125rem;">
+                            @foreach (var (key, value) in Image.ExifData)
+                            {
+                                <span style="color: #6b7280; font-weight: 500;">@key</span>
+                                <span style="color: #1f2937;">@value</span>
+                            }
+                        </div>
+                    </RadzenFieldset>
+                }
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                    <RadzenButton Text="@(_saving ? "Saving..." : "Save")"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Size="ButtonSize.Small"
+                                  IsBusy="@_saving"
+                                  Click="@(args => SaveMetadataAsync())" />
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.Small"
+                                  Click="@(args => CancelEdit())" />
+                </div>
+            }
+            else
+            {
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; font-size: 0.875rem;">
+                    @MetaRow("Name", Image.Name)
+                    @MetaRow("Description", Image.Description)
+                    @MetaRow("Alt text", Image.Caption)
+                    @MetaRow("Category", Image.Category)
+                    @MetaRow("Folder", Image.Folder)
+                    @MetaRow("Author", Image.Author)
+                    @if (Image.Keywords?.Count > 0)
+                    {
+                        @MetaRow("Keywords", string.Join(", ", Image.Keywords))
+                    }
+                    @MetaRow("Copyright", Image.CopyrightHolder is not null ? $"{Image.CopyrightHolder} {Image.CopyrightYear}" : null)
+                    @MetaRow("License", Image.License)
+                    @MetaRow("Location", Image.LocationName)
+                    @if (Image.IsVideo)
+                    {
+                        @MetaRow("Duration", Image.FormattedDuration)
+                        @MetaRow("Audio", Image.HasAudio == true ? "Yes" : "No")
+                    }
+                    @MetaRow("Uploaded", Image.UploadedAt.ToString("yyyy-MM-dd HH:mm"))
+                    @MetaRow("File", Image.OriginalFileName)
+                    @if (Image.Tags?.Count > 0)
+                    {
+                        @MetaRow("Tags", string.Join(", ", Image.Tags.Select(t => $"{t.Key}={t.Value}")))
+                    }
+                </div>
+            }
+        </div>
+
+        @* ── Danger zone ── *@
+        <div style="border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 0.75rem; padding: 1rem;">
+            <h3 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #ef4444;">Danger Zone</h3>
+            @if (_confirmDelete)
+            {
+                <p style="font-size: 0.8125rem; color: #ef4444; margin: 0 0 0.75rem 0;">This will permanently delete the @(Image.IsVideo ? "video" : "image") and all cached variants.</p>
+                <div style="display: flex; gap: 0.5rem;">
+                    <RadzenButton Text="@(_deleting ? "Deleting..." : "Yes, delete")"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Size="ButtonSize.Small"
+                                  IsBusy="@_deleting"
+                                  Click="@(args => ConfirmDeleteAsync())" />
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.Small"
+                                  Click="@(args => _confirmDelete = false)" />
+                </div>
+            }
+            else
+            {
+                <RadzenButton Text="@($"Delete {(Image.IsVideo ? "video" : "image")}")"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Variant="Variant.Outlined"
+                              Size="ButtonSize.Small"
+                              Click="@(args => _confirmDelete = true)" />
+            }
+        </div>
+    </RadzenCard>
+}

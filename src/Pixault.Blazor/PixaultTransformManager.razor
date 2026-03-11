@@ -1,0 +1,174 @@
+@namespace Pixault.Blazor
+@using Pixault.Client
+
+<div style="@RootStyle">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Named Transforms</h2>
+        <RadzenButton Text="New Transform"
+                      Icon="add"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Size="ButtonSize.Small"
+                      Click="@(args => StartCreate())" />
+    </div>
+
+    @if (_loading)
+    {
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2.5rem 1rem; color: #6b7280; font-size: 0.875rem;">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
+            <span>Loading transforms...</span>
+        </div>
+    }
+    else if (_transforms.Count == 0 && !_showForm)
+    {
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2.5rem 1rem; color: #6b7280; font-size: 0.875rem;">
+            <p style="margin: 0;">No named transforms yet. Create one to define reusable presets.</p>
+        </div>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@_transforms"
+                        TItem="NamedTransformDto"
+                        AllowSorting="true"
+                        AllowColumnResize="true"
+                        Style="margin-bottom: 1rem;">
+            <Columns>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Property="Name" Title="Name" Width="160px">
+                    <Template Context="t">
+                        <code style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace; font-size: 0.875rem; font-weight: 600; color: var(--pxlt-accent, #6366f1);">t_@t.Name</code>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Property="Width" Title="Width" Width="90px">
+                    <Template Context="t">
+                        @(t.Width?.ToString() ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Property="Height" Title="Height" Width="90px">
+                    <Template Context="t">
+                        @(t.Height?.ToString() ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Property="FitMode" Title="Fit Mode" Width="110px">
+                    <Template Context="t">
+                        @(t.FitMode ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Property="Quality" Title="Quality" Width="90px">
+                    <Template Context="t">
+                        @(t.Quality?.ToString() ?? "-")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Title="Extra" Sortable="false">
+                    <Template Context="t">
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.375rem; font-size: 0.75rem;">
+                            @if (t.Blur.HasValue)
+                            {
+                                <span style="background: #f9fafb; padding: 0.125rem 0.5rem; border-radius: 4px; color: #6b7280; font-family: ui-monospace, SFMono-Regular, monospace;">blur: @t.Blur</span>
+                            }
+                            @if (t.WatermarkId is not null)
+                            {
+                                <span style="background: #f9fafb; padding: 0.125rem 0.5rem; border-radius: 4px; color: #6b7280; font-family: ui-monospace, SFMono-Regular, monospace;">wm: @t.WatermarkId</span>
+                            }
+                            @if (t.LockedParameters.Count > 0)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Warning"
+                                             Text="@($"{t.LockedParameters.Count} locked")"
+                                             title="@($"Locked: {string.Join(", ", t.LockedParameters)}")" />
+                            }
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="NamedTransformDto" Title="Actions" Width="100px" Sortable="false" TextAlign="TextAlign.Center">
+                    <Template Context="t">
+                        <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                            <RadzenButton Icon="edit"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Size="ButtonSize.Small"
+                                          title="Edit"
+                                          Click="@(args => StartEdit(t))" />
+                            <RadzenButton Icon="delete"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Variant="Variant.Text"
+                                          Size="ButtonSize.Small"
+                                          title="Delete"
+                                          Click="@(args => DeleteTransformAsync(t.Name))" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
+
+    @* -- Create/Edit form -- *@
+    @if (_showForm)
+    {
+        <RadzenCard Style="border: 1px solid var(--pxlt-accent, #6366f1); margin-top: 1rem; padding: 1.25rem;">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1rem; font-weight: 600;">
+                @(_editingName is not null ? $"Edit: {_editingName}" : "New Transform")
+            </h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Name</label>
+                    <RadzenTextBox @bind-Value="_formName"
+                                   Placeholder="e.g. gallery-thumb"
+                                   Disabled="@(_editingName is not null)"
+                                   Style="width: 100%;" />
+                    <span style="font-size: 0.625rem; color: #6b7280;">Lowercase letters, numbers, hyphens</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Width</label>
+                    <RadzenNumeric TValue="int?" @bind-Value="_formWidth"
+                                   Min="1" Max="4096"
+                                   Placeholder="auto"
+                                   Style="width: 100%;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Height</label>
+                    <RadzenNumeric TValue="int?" @bind-Value="_formHeight"
+                                   Min="1" Max="4096"
+                                   Placeholder="auto"
+                                   Style="width: 100%;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Fit Mode</label>
+                    <RadzenDropDown TValue="string" @bind-Value="_formFitMode"
+                                    Data="@_fitModes"
+                                    TextProperty="Text" ValueProperty="Value"
+                                    Placeholder="Default"
+                                    AllowClear="true"
+                                    Style="width: 100%;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Quality</label>
+                    <RadzenNumeric TValue="int?" @bind-Value="_formQuality"
+                                   Min="1" Max="100"
+                                   Placeholder="85"
+                                   Style="width: 100%;" />
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <label style="font-size: 0.6875rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em;">Blur</label>
+                    <RadzenNumeric TValue="int?" @bind-Value="_formBlur"
+                                   Min="0" Max="100"
+                                   Placeholder="0"
+                                   Style="width: 100%;" />
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <RadzenButton Text="@(_saving ? "Saving..." : "Save")"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Disabled="@_saving"
+                              Click="@(args => SaveTransformAsync())" />
+                <RadzenButton Text="Cancel"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@(args => CancelForm())" />
+            </div>
+
+            @if (_formError is not null)
+            {
+                <div style="margin-top: 0.75rem; font-size: 0.8125rem; color: #ef4444;">@_formError</div>
+            }
+        </RadzenCard>
+    }
+</div>
