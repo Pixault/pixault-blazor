@@ -10,7 +10,7 @@ public partial class PixaultGallery : ComponentBase
 
     [Parameter] public string Project { get; set; } = "";
     [Parameter] public string AccentColor { get; set; } = "#6366f1";
-    [Parameter] public string ThumbnailTransform { get; set; } = "w_240,h_240,fit_cover";
+    [Parameter] public string ThumbnailTransform { get; set; } = "w_400";
     [Parameter] public EventCallback<ImageMetadataDto> OnImageSelected { get; set; }
 
     private List<ImageMetadataDto> _images = [];
@@ -134,26 +134,59 @@ public partial class PixaultGallery : ComponentBase
         await LoadImagesAsync();
     }
 
+    private async Task OnFolderNameKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await CreateFolderAsync();
+        else if (e.Key == "Escape")
+        {
+            _creatingFolder = false;
+            _newFolderName = "";
+        }
+    }
+
     private async Task CreateFolderAsync()
     {
         var name = _newFolderName.Trim().Trim('/');
         if (string.IsNullOrWhiteSpace(name)) return;
 
-        var fullPath = string.IsNullOrEmpty(_currentPath) ? name : $"{_currentPath}/{name}";
-        await Admin.CreateFolderAsync(fullPath, project: Project);
-        _newFolderName = "";
-        _creatingFolder = false;
-        await LoadFoldersAsync();
+        try
+        {
+            var fullPath = string.IsNullOrEmpty(_currentPath) ? name : $"{_currentPath}/{name}";
+            await Admin.CreateFolderAsync(fullPath, project: Project);
+            _newFolderName = "";
+            _creatingFolder = false;
+            await LoadFoldersAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to create folder: {ex.Message}";
+        }
         StateHasChanged();
     }
 
-    private async Task DeleteFolderAsync(string folder)
+    private string? _folderToDelete;
+    private bool _deletingFolder;
+
+    private async Task ConfirmDeleteFolderAsync()
     {
-        await Admin.DeleteFolderAsync(folder, project: Project);
-        if (_currentPath == folder)
-            _currentPath = "";
-        await Task.WhenAll(LoadFoldersAsync(), LoadImagesAsync());
+        if (_folderToDelete is null) return;
+        _deletingFolder = true;
         StateHasChanged();
+
+        try
+        {
+            await Admin.DeleteFolderAsync(_folderToDelete, project: Project);
+            if (_currentPath == _folderToDelete)
+                _currentPath = "";
+            _folderToDelete = null;
+            await Task.WhenAll(LoadFoldersAsync(), LoadImagesAsync());
+        }
+        finally
+        {
+            _deletingFolder = false;
+            StateHasChanged();
+        }
     }
 
     private async Task OnInlineUploadComplete()
@@ -169,14 +202,13 @@ public partial class PixaultGallery : ComponentBase
 
     private string ThumbnailUrl(ImageMetadataDto image)
     {
-        var thumbId = image.IsVideo && image.ThumbnailId is not null
+        // Use ThumbnailId for videos and EPS files (points to derived rasterized image)
+        var thumbId = (image.IsVideo || image.IsEps) && image.ThumbnailId is not null
             ? image.ThumbnailId
             : image.ImageId;
 
         return ImageService.For(Project, thumbId)
-            .Width(240)
-            .Height(240)
-            .Fit(FitMode.Cover)
+            .Width(400)
             .Format(image.IsSvg ? "svg" : "webp")
             .Build();
     }
