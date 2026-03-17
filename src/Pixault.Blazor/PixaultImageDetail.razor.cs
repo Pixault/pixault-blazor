@@ -56,6 +56,12 @@ public partial class PixaultImageDetail : ComponentBase
     // EXIF strip state
     private bool _strippingExif;
 
+    // EPS state
+    private List<DerivedAssetDto>? _derivedAssets;
+    private EpsProcessingStatusDto? _epsStatus;
+    private bool _loadingDerived;
+    private bool _splitting;
+
     // RootStyle is now inlined in the razor markup
 
     private static readonly object[] _formatOptions =
@@ -66,15 +72,22 @@ public partial class PixaultImageDetail : ComponentBase
         new { Text = "AVIF", Value = "avif" }
     ];
 
+    private bool IsLandscape => Image is not null && Image.Width > Image.Height;
+    private bool IsAnimated => Image?.ContentType is "image/gif";
+    private bool IsEps => Image?.IsEps == true;
+
     private string PreviewUrl
     {
         get
         {
             if (Image is null) return "";
-            // For videos, use the thumbnail as the preview/poster image
-            var previewId = Image.IsVideo && Image.ThumbnailId is not null
+            // For videos and EPS files, use the thumbnail as the preview image
+            var previewId = (Image.IsVideo || Image.IsEps) && Image.ThumbnailId is not null
                 ? Image.ThumbnailId
                 : Image.ImageId;
+            // Serve GIFs as original to preserve animation
+            if (IsAnimated)
+                return ImageService.For(Project, previewId).Format("gif").Build();
             return ImageService.For(Project, previewId)
                 .Width(600)
                 .Height(400)
@@ -118,6 +131,59 @@ public partial class PixaultImageDetail : ComponentBase
         _urlHeight = null;
         _urlQuality = null;
         _urlFormat = "webp";
+        _derivedAssets = null;
+        _epsStatus = null;
+        _splitting = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Image?.IsEps == true)
+        {
+            await LoadEpsDataAsync();
+        }
+    }
+
+    private async Task LoadEpsDataAsync()
+    {
+        if (Image is null) return;
+        _loadingDerived = true;
+        try
+        {
+            var derived = await Admin.GetDerivedAssetsAsync(Image.ImageId, project: Project);
+            _derivedAssets = derived;
+
+            var status = await Admin.GetEpsProcessingStatusAsync(Image.ImageId, project: Project);
+            _epsStatus = status;
+        }
+        catch
+        {
+            _derivedAssets = [];
+        }
+        finally
+        {
+            _loadingDerived = false;
+        }
+    }
+
+    private async Task SplitDesignsAsync()
+    {
+        if (Image is null) return;
+        _splitting = true;
+        try
+        {
+            await Admin.SplitEpsDesignsAsync(Image.ImageId, project: Project);
+            // Reload to show new status
+            await LoadEpsDataAsync();
+        }
+        catch
+        {
+            // Show error in UI via status reload
+        }
+        finally
+        {
+            _splitting = false;
+        }
     }
 
     private void StartEdit()

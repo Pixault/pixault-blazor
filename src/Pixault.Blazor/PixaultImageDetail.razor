@@ -3,29 +3,29 @@
 
 @if (Image is not null)
 {
-    <RadzenCard Style="@($"--pxlt-accent: {AccentColor}; padding: 1.5rem;")">
+    <RadzenCard Style="@($"--pxlt-accent: {AccentColor}; padding: 1.5rem; overflow-x: hidden;")">
 
         @* ── Preview ── *@
-        <div style="background: #f9fafb; border-radius: 0.75rem; overflow: hidden; display: flex; align-items: center; justify-content: center; max-height: 320px; margin-bottom: 1rem;">
+        <div style="background: #f9fafb; border-radius: 0.75rem; overflow: hidden; display: flex; align-items: center; justify-content: center; max-height: @(IsLandscape ? "480px" : "320px"); margin-bottom: 1rem;">
             @if (Image.IsVideo)
             {
                 <video src="@VideoUrl" controls preload="metadata"
                        poster="@PreviewUrl"
-                       style="max-width: 100%; max-height: 320px; border-radius: 0.5rem;">
+                       style="max-width: 100%; max-height: @(IsLandscape ? "480px" : "320px"); border-radius: 0.5rem;">
                     Your browser does not support the video tag.
                 </video>
             }
             else
             {
                 <img src="@PreviewUrl" alt="@(Image.Name ?? Image.OriginalFileName)"
-                     style="border-radius: 0.5rem; max-width: 100%; max-height: 320px; object-fit: contain;" />
+                     style="border-radius: 0.5rem; max-width: 100%; max-height: @(IsLandscape ? "480px" : "320px"); object-fit: contain;" />
             }
         </div>
 
         @* ── Info bar ── *@
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 0.375rem;">
-                <code style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.8125rem; background: #f9fafb; padding: 0.25rem 0.5rem; border-radius: 6px; color: #6b7280; word-break: break-all;">@Image.ImageId</code>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.375rem; min-width: 0;">
+                <code style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.8125rem; background: #f9fafb; padding: 0.25rem 0.5rem; border-radius: 6px; color: #6b7280; word-break: break-all; overflow-wrap: anywhere;">@Image.ImageId</code>
                 <RadzenButton Icon="content_copy"
                               ButtonStyle="ButtonStyle.Light"
                               Size="ButtonSize.ExtraSmall"
@@ -43,13 +43,75 @@
             </div>
         </div>
 
+        @* ── EPS Derived Assets ── *@
+        @if (IsEps)
+        {
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <h3 style="margin: 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">
+                        Derived Assets
+                    </h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        @if (_epsStatus is not null && _epsStatus.Status is "Running" or "Pending" or "Discovering")
+                        {
+                            <span style="font-size: 0.75rem; color: #6b7280;">
+                                Processing: @_epsStatus.ProcessedAssets / @_epsStatus.TotalAssets
+                            </span>
+                            <RadzenProgressBarCircular ShowValue="false" Size="ProgressBarCircularSize.ExtraSmall" />
+                        }
+                        <RadzenButton Text="@(_splitting ? "Splitting..." : "Split Designs")"
+                                      Icon="grid_view"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Size="ButtonSize.Small"
+                                      IsBusy="@_splitting"
+                                      Click="@(args => SplitDesignsAsync())" />
+                        <RadzenButton Icon="refresh"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Size="ButtonSize.ExtraSmall"
+                                      title="Refresh"
+                                      Click="@(args => LoadEpsDataAsync())" />
+                    </div>
+                </div>
+
+                @if (_loadingDerived)
+                {
+                    <div style="display: flex; align-items: center; justify-content: center; padding: 1rem;">
+                        <RadzenProgressBarCircular ShowValue="false" Size="ProgressBarCircularSize.Small" />
+                    </div>
+                }
+                else if (_derivedAssets is { Count: > 0 })
+                {
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem;">
+                        @foreach (var derived in _derivedAssets)
+                        {
+                            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; background: #f9fafb;">
+                                <img src="@(ImageService.For(Project, derived.ImageId).Width(200).Format("webp").Build())"
+                                     alt="@derived.DerivationType" loading="lazy"
+                                     style="width: 100%; display: block;" />
+                                <div style="padding: 0.375rem 0.5rem; font-size: 0.6875rem; color: #6b7280;">
+                                    <div style="font-weight: 500;">@(derived.DerivationType ?? "rasterized")</div>
+                                    <div>@derived.Width &times; @derived.Height</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p style="font-size: 0.8125rem; color: #94a3b8; margin: 0;">
+                        No derived assets yet. Processing may still be in progress.
+                    </p>
+                }
+            </div>
+        }
+
         @* ── Video URL (for videos) / URL Builder (for images) ── *@
         @if (Image.IsVideo)
         {
             <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
                 <h3 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280;">Video URL</h3>
-                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem;">
-                    <code style="flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all;">@VideoUrl</code>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; min-width: 0;">
+                    <code style="flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all; overflow-wrap: anywhere;">@VideoUrl</code>
                     <RadzenButton Icon="content_copy"
                                   ButtonStyle="ButtonStyle.Light"
                                   Size="ButtonSize.ExtraSmall"
@@ -95,8 +157,8 @@
                                         Data="@_formatOptions" TextProperty="Text" ValueProperty="Value" />
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem;">
-                    <code style="flex: 1; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all;">@GeneratedUrl</code>
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: #f9fafb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; min-width: 0;">
+                    <code style="flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.75rem; word-break: break-all; overflow-wrap: anywhere;">@GeneratedUrl</code>
                     <RadzenButton Icon="content_copy"
                                   ButtonStyle="ButtonStyle.Light"
                                   Size="ButtonSize.ExtraSmall"
@@ -260,11 +322,11 @@
                                           IsBusy="@_strippingExif"
                                           Click="@(args => StripExifAsync())" />
                         </div>
-                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.375rem 0.75rem; font-size: 0.8125rem;">
+                        <div style="display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.375rem 0.75rem; font-size: 0.8125rem;">
                             @foreach (var (key, value) in Image.ExifData)
                             {
                                 <span style="color: #6b7280; font-weight: 500;">@key</span>
-                                <span style="color: #1f2937;">@value</span>
+                                <span style="color: #1f2937; overflow-wrap: anywhere;">@value</span>
                             }
                         </div>
                     </RadzenFieldset>
@@ -284,7 +346,7 @@
             }
             else
             {
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; font-size: 0.875rem;">
+                <div style="display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.5rem; font-size: 0.875rem;">
                     @MetaRow("Name", Image.Name)
                     @MetaRow("Description", Image.Description)
                     @MetaRow("Alt text", Image.Caption)
