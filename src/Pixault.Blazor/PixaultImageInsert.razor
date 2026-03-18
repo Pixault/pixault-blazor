@@ -50,6 +50,34 @@
         </div>
     </div>
 
+    @* ── Watermark ── *@
+    @if (_watermarks is not null && _watermarks.Count > 0)
+    {
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+            <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Watermark</label>
+                <RadzenDropDown @bind-Value="_watermarkId" Data="_watermarkOptions"
+                                TextProperty="Label" ValueProperty="Value"
+                                Placeholder="None" AllowClear="true"
+                                Style="width: 100%;" />
+            </div>
+            @if (_watermarkId is not null)
+            {
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Position</label>
+                    <RadzenDropDown @bind-Value="_watermarkPosition" Data="_wmPositionOptions"
+                                    TextProperty="Label" ValueProperty="Value"
+                                    Style="width: 100%;" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Opacity (%)</label>
+                    <RadzenNumeric @bind-Value="_watermarkOpacity" Min="1" Max="100"
+                                   Style="width: 100%;" />
+                </div>
+            }
+        </div>
+    }
+
     @* ── Alt text ── *@
     <div>
         <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Alt text</label>

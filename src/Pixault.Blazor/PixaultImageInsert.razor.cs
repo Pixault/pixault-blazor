@@ -11,6 +11,7 @@ namespace Pixault.Blazor;
 public partial class PixaultImageInsert : ComponentBase
 {
     [Inject] private PixaultImageService ImageService { get; set; } = default!;
+    [Inject] private PixaultAdminClient Admin { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     /// <summary>The project slug (e.g. "barber-shop").</summary>
@@ -37,6 +38,13 @@ public partial class PixaultImageInsert : ComponentBase
     private string? _altText;
     private bool _lockAspect = true;
 
+    // Watermark state
+    private List<WatermarkDto>? _watermarks;
+    private List<object>? _watermarkOptions;
+    private string? _watermarkId;
+    private string _watermarkPosition = "br";
+    private int _watermarkOpacity = 30;
+
     private readonly List<object> _fitOptions =
     [
         new { Label = "Contain", Value = "contain" },
@@ -53,12 +61,36 @@ public partial class PixaultImageInsert : ComponentBase
         new { Label = "AVIF", Value = "avif" },
     ];
 
-    protected override void OnParametersSet()
+    private readonly List<object> _wmPositionOptions =
+    [
+        new { Label = "Bottom-Right", Value = "br" },
+        new { Label = "Bottom-Left", Value = "bl" },
+        new { Label = "Top-Right", Value = "tr" },
+        new { Label = "Top-Left", Value = "tl" },
+        new { Label = "Center", Value = "c" },
+        new { Label = "Tile", Value = "tile" },
+    ];
+
+    protected override async Task OnParametersSetAsync()
     {
         if (Image is null) return;
 
-        // Default alt text from image metadata
         _altText ??= Image.Caption ?? Image.Name ?? Image.OriginalFileName;
+
+        if (_watermarks is null && !string.IsNullOrEmpty(Project))
+        {
+            try
+            {
+                _watermarks = await Admin.ListWatermarksAsync(Project);
+                _watermarkOptions = _watermarks
+                    .Select(w => (object)new { Label = w.Id, Value = w.Id })
+                    .ToList();
+            }
+            catch
+            {
+                _watermarks = [];
+            }
+        }
     }
 
     private string GeneratedUrl => BuildUrl();
@@ -74,9 +106,12 @@ public partial class PixaultImageInsert : ComponentBase
             builder = builder.Width(Math.Min(previewWidth, 800));
             if (_height.HasValue)
                 builder = builder.Height(Math.Min(_height.Value, 600));
-            builder = builder.Fit(ParseFit(_fit)).Format(_format);
+            builder = builder.Fit(ParseFit(_fit));
             if (_quality.HasValue)
                 builder = builder.Quality(_quality.Value);
+            if (_watermarkId is not null)
+                builder = builder.Watermark(_watermarkId, ParseWmPosition(_watermarkPosition), _watermarkOpacity);
+            builder = builder.Format(_format);
             return builder.Build();
         }
     }
@@ -99,10 +134,23 @@ public partial class PixaultImageInsert : ComponentBase
         if (_height.HasValue) builder = builder.Height(_height.Value);
         builder = builder.Fit(ParseFit(_fit));
         if (_quality.HasValue) builder = builder.Quality(_quality.Value);
+        if (_watermarkId is not null)
+            builder = builder.Watermark(_watermarkId, ParseWmPosition(_watermarkPosition), _watermarkOpacity);
         builder = builder.Format(_format);
 
         return builder.Build();
     }
+
+    private static WmPosition ParseWmPosition(string pos) => pos switch
+    {
+        "tl" => WmPosition.TopLeft,
+        "tr" => WmPosition.TopRight,
+        "bl" => WmPosition.BottomLeft,
+        "br" => WmPosition.BottomRight,
+        "c" => WmPosition.Center,
+        "tile" => WmPosition.Tile,
+        _ => WmPosition.BottomRight,
+    };
 
     private static FitMode ParseFit(string fit) => fit switch
     {
