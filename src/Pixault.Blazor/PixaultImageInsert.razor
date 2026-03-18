@@ -1,0 +1,85 @@
+@namespace Pixault.Blazor
+
+<div style="display: flex; flex-direction: column; gap: 1.25rem; min-width: 0;">
+
+    @* ── Preview ── *@
+    <div style="display: flex; justify-content: center; background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0; border-radius: 0.5rem; overflow: hidden; min-height: 200px; max-height: 400px;">
+        <img src="@PreviewUrl" alt="@(_altText ?? Image?.OriginalFileName)"
+             style="max-width: 100%; max-height: 400px; object-fit: contain; display: block;" />
+    </div>
+
+    @* ── Original info ── *@
+    <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.8125rem; color: #64748b; flex-wrap: wrap;">
+        <span style="font-weight: 500; color: #1e293b;">@(Image?.Name ?? Image?.OriginalFileName)</span>
+        <span>@(Image?.Width)&times;@(Image?.Height)</span>
+        <span>@Image?.FormattedSize</span>
+    </div>
+
+    @* ── Transform controls ── *@
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Width (px)</label>
+            <RadzenNumeric @bind-Value="_width" Min="1" Max="4096" Placeholder="auto"
+                           Style="width: 100%;" Change="@((int? _) => OnTransformChanged())" />
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Height (px)</label>
+            <RadzenNumeric @bind-Value="_height" Min="1" Max="4096" Placeholder="auto"
+                           Style="width: 100%;" Change="@((int? _) => OnTransformChanged())"
+                           Disabled="@_lockAspect" />
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+        <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Fit</label>
+            <RadzenDropDown @bind-Value="_fit" Data="_fitOptions"
+                            TextProperty="Label" ValueProperty="Value"
+                            Style="width: 100%;" />
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Format</label>
+            <RadzenDropDown @bind-Value="_format" Data="_formatOptions"
+                            TextProperty="Label" ValueProperty="Value"
+                            Style="width: 100%;" />
+        </div>
+        <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Quality</label>
+            <RadzenNumeric @bind-Value="_quality" Min="1" Max="100" Placeholder="85"
+                           Style="width: 100%;" Change="@((int? _) => OnTransformChanged())" />
+        </div>
+    </div>
+
+    @* ── Alt text ── *@
+    <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Alt text</label>
+        <RadzenTextBox @bind-Value="_altText" Placeholder="Describe the image for accessibility"
+                       Style="width: 100%;" />
+    </div>
+
+    @* ── Generated URL ── *@
+    <div style="background: #f1f5f9; border-radius: 0.375rem; padding: 0.5rem 0.75rem; display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+        <code style="font-size: 0.75rem; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">@GeneratedUrl</code>
+        <RadzenButton Icon="content_copy" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Light"
+                      title="Copy URL" Click="CopyUrlAsync" />
+    </div>
+
+    @* ── Markdown preview ── *@
+    <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 500; color: #475569; margin-bottom: 0.25rem;">Markdown</label>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-family: monospace; font-size: 0.75rem; color: #334155; word-break: break-all;">
+            @MarkdownSnippet
+        </div>
+    </div>
+
+    @* ── Actions ── *@
+    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        @if (ShowCancel)
+        {
+            <RadzenButton Text="Cancel" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Light"
+                          Click="OnCancelClicked" />
+        }
+        <RadzenButton Text="Insert" Icon="add_photo_alternate" ButtonStyle="ButtonStyle.Primary"
+                      Click="OnInsertClicked" />
+    </div>
+</div>
