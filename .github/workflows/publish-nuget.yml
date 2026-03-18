@@ -12,8 +12,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: nuget
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -55,4 +57,4 @@ jobs:
 
       - name: Push to NuGet
         if: steps.check.outputs.exists == 'false'
-        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key az --source https://api.nuget.org/v3/index.json --skip-duplicate
