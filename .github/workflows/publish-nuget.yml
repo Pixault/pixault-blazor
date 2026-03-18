@@ -55,6 +55,12 @@ jobs:
         if: steps.check.outputs.exists == 'false'
         run: dotnet pack src/Pixault.Blazor/Pixault.Blazor.csproj -c Release --no-build -o ./nupkg
 
+      - name: Login to NuGet via trusted publisher
+        if: steps.check.outputs.exists == 'false'
+        uses: NuGet/login@v1
+        with:
+          nuget-server: https://api.nuget.org
+
       - name: Push to NuGet
         if: steps.check.outputs.exists == 'false'
-        run: dotnet nuget push ./nupkg/*.nupkg --api-key az --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
