@@ -1,11 +1,11 @@
 @namespace Pixault.Blazor
 @using Pixault.Client
 
-<div style="display: flex; flex-direction: column; gap: 1.5rem; --pxlt-accent: @AccentColor; width: 100%;">
+<div style="display: flex; flex-direction: column; gap: 1.5rem; --pxlt-accent: @AccentColor; width: 100%; min-width: 0; overflow: hidden; box-sizing: border-box;">
 
     @* ── Header ── *@
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
             <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Images</h2>
             @if (_totalCount > 0)
             {
@@ -14,11 +14,11 @@
                 </span>
             }
         </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex: 1 1 0;">
             <RadzenTextBox @bind-Value="_searchTerm"
                            Placeholder="Search images..."
                            Change="@(async _ => await OnSearchChanged())"
-                           Style="min-width: 200px;" />
+                           Style="min-width: 0; width: 100%; max-width: 200px;" />
             <RadzenButton Icon="refresh"
                           ButtonStyle="ButtonStyle.Light"
                           Size="ButtonSize.Small"
@@ -28,7 +28,7 @@
     </div>
 
     @* ── Breadcrumb bar ── *@
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; min-width: 0;">
         <nav style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.8125rem; min-width: 0; overflow: hidden;">
             @{ var segments = BreadcrumbSegments; }
             @for (var i = 0; i < segments.Count; i++)
@@ -129,7 +129,7 @@
     }
     else
     {
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr)); gap: 1rem;">
 
             @* ── New folder inline input ── *@
             @if (_creatingFolder)
