@@ -1,0 +1,47 @@
+@inject PixaultImageService ImageService
+
+@if (UsePicture)
+{
+    @((MarkupString)ImageTagBuilder.BuildPictureTag(
+        ImageService, Project, ImageId, Transform, Quality,
+        Alt ?? "", Widths ?? DefaultWidths, Sizes ?? "100vw",
+        Loading ?? "lazy", CssClass))
+}
+else
+{
+    @((MarkupString)ImageTagBuilder.BuildImgTag(
+        ImageService, Project, ImageId, Transform, Quality,
+        Alt ?? "", Widths ?? DefaultWidths, Sizes ?? "100vw",
+        Loading ?? "lazy", CssClass))
+}
+
+@code {
+    private static readonly int[] DefaultWidths = [400, 800, 1200];
+
+    [Parameter, EditorRequired] public string Project { get; set; } = "";
+    [Parameter, EditorRequired] public string ImageId { get; set; } = "";
+
+    /// <summary>Alt text for accessibility and SEO.</summary>
+    [Parameter] public string? Alt { get; set; }
+
+    /// <summary>Named transform to apply (e.g., "gallery", "thumbnail").</summary>
+    [Parameter] public string? Transform { get; set; }
+
+    /// <summary>Output quality (1-100).</summary>
+    [Parameter] public int? Quality { get; set; }
+
+    /// <summary>Breakpoint widths for srcset generation.</summary>
+    [Parameter] public int[]? Widths { get; set; }
+
+    /// <summary>CSS sizes attribute (e.g., "(max-width: 800px) 100vw, 800px").</summary>
+    [Parameter] public string? Sizes { get; set; }
+
+    /// <summary>Loading behavior: "lazy" (default) or "eager".</summary>
+    [Parameter] public string? Loading { get; set; }
+
+    /// <summary>CSS class(es) for the img element.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>If true, renders a &lt;picture&gt; element with AVIF/WebP sources. Default true.</summary>
+    [Parameter] public bool UsePicture { get; set; } = true;
+}
