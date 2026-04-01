@@ -65,6 +65,17 @@ Add the Radzen stylesheet and script to your `App.razor` or `_Host.cshtml`:
                     ImageId="@selectedImageId" />
 ```
 
+### Image Component
+
+```razor
+<PixaultImage Project="tattoo" ImageId="img_01JKABC"
+              Alt="Sunset tattoo" Quality="85"
+              Widths="@(new[] { 400, 800, 1200 })"
+              Sizes="(max-width: 800px) 100vw, 800px" />
+```
+
+Renders a `<picture>` element by default with AVIF/WebP/JPEG sources. Set `UsePicture="false"` for a single `<img>` tag with `srcset`.
+
 ## Dependencies
 
 - [Pixault.Client](https://github.com/pixault/pixault-dotnet) — .NET SDK
