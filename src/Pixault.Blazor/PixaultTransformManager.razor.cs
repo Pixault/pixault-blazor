@@ -11,6 +11,7 @@ public partial class PixaultTransformManager : ComponentBase
     [Parameter] public string AccentColor { get; set; } = "#6366f1";
 
     private List<NamedTransformDto> _transforms = [];
+    private List<WatermarkDto> _watermarks = [];
     private bool _loading = true;
     private bool _showForm;
     private bool _saving;
@@ -25,6 +26,9 @@ public partial class PixaultTransformManager : ComponentBase
     private string _formFitMode = "";
     private int? _formQuality;
     private int? _formBlur;
+    private string _formWatermarkId = "";
+    private string _formWatermarkPosition = "";
+    private int? _formWatermarkOpacity;
 
     private static readonly object[] _fitModes =
     [
@@ -32,6 +36,16 @@ public partial class PixaultTransformManager : ComponentBase
         new { Text = "Contain", Value = "Contain" },
         new { Text = "Fill", Value = "Fill" },
         new { Text = "Pad", Value = "Pad" },
+    ];
+
+    private static readonly object[] _watermarkPositions =
+    [
+        new { Text = "Top Left", Value = "tl" },
+        new { Text = "Top Right", Value = "tr" },
+        new { Text = "Bottom Left", Value = "bl" },
+        new { Text = "Bottom Right", Value = "br" },
+        new { Text = "Center", Value = "c" },
+        new { Text = "Tile", Value = "tile" },
     ];
 
     private string RootStyle => $"--pxlt-accent: {AccentColor};";
@@ -56,6 +70,14 @@ public partial class PixaultTransformManager : ComponentBase
     {
         _loading = true;
         _transforms = await Admin.ListTransformsAsync(project: Project);
+        try
+        {
+            _watermarks = await Admin.ListWatermarksAsync(project: Project);
+        }
+        catch
+        {
+            _watermarks = [];
+        }
         _loading = false;
     }
 
@@ -68,6 +90,9 @@ public partial class PixaultTransformManager : ComponentBase
         _formFitMode = "";
         _formQuality = null;
         _formBlur = null;
+        _formWatermarkId = "";
+        _formWatermarkPosition = "";
+        _formWatermarkOpacity = null;
         _formError = null;
         _showForm = true;
     }
@@ -81,6 +106,9 @@ public partial class PixaultTransformManager : ComponentBase
         _formFitMode = t.FitMode ?? "";
         _formQuality = t.Quality;
         _formBlur = t.Blur;
+        _formWatermarkId = t.WatermarkId ?? "";
+        _formWatermarkPosition = t.WatermarkPosition ?? "";
+        _formWatermarkOpacity = t.WatermarkOpacity;
         _formError = null;
         _showForm = true;
     }
@@ -111,7 +139,10 @@ public partial class PixaultTransformManager : ComponentBase
                 Height = _formHeight,
                 FitMode = string.IsNullOrEmpty(_formFitMode) ? null : _formFitMode,
                 Quality = _formQuality,
-                Blur = _formBlur
+                Blur = _formBlur,
+                WatermarkId = string.IsNullOrEmpty(_formWatermarkId) ? null : _formWatermarkId,
+                WatermarkPosition = string.IsNullOrEmpty(_formWatermarkPosition) ? null : _formWatermarkPosition,
+                WatermarkOpacity = _formWatermarkOpacity,
             };
 
             await Admin.SaveTransformAsync(name, save, project: Project);
