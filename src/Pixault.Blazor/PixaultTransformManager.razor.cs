@@ -5,7 +5,7 @@ namespace Pixault.Blazor;
 
 public partial class PixaultTransformManager : ComponentBase
 {
-    [Inject] private PixaultAdminClient Admin { get; set; } = default!;
+    [Inject] private IPixaultAdminClient Admin { get; set; } = default!;
 
     [Parameter] public string Project { get; set; } = "";
     [Parameter] public string AccentColor { get; set; } = "#6366f1";

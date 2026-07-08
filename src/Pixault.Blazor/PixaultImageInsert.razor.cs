@@ -11,7 +11,7 @@ namespace Pixault.Blazor;
 public partial class PixaultImageInsert : ComponentBase
 {
     [Inject] private PixaultImageService ImageService { get; set; } = default!;
-    [Inject] private PixaultAdminClient Admin { get; set; } = default!;
+    [Inject] private IPixaultAdminClient Admin { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     /// <summary>The project slug (e.g. "barber-shop").</summary>

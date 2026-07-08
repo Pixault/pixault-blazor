@@ -7,9 +7,9 @@ namespace Pixault.Blazor;
 
 public partial class PixaultUploader : ComponentBase
 {
-    [Inject] private PixaultUploadClient UploadClient { get; set; } = null!;
+    [Inject] private IPixaultUploadClient UploadClient { get; set; } = null!;
     [Inject] private PixaultImageService ImageService { get; set; } = null!;
-    [Inject] private PixaultAdminClient AdminClient { get; set; } = null!;
+    [Inject] private IPixaultAdminClient AdminClient { get; set; } = null!;
 
     /// <summary>
     /// Project identifier for uploads (e.g., "barber", "tattoo").

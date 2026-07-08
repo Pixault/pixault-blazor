@@ -6,7 +6,7 @@ namespace Pixault.Blazor;
 
 public partial class PixaultImageDetail : ComponentBase
 {
-    [Inject] private PixaultAdminClient Admin { get; set; } = default!;
+    [Inject] private IPixaultAdminClient Admin { get; set; } = default!;
     [Inject] private PixaultImageService ImageService { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private Radzen.DialogService? Dialog { get; set; }

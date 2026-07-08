@@ -5,7 +5,7 @@ namespace Pixault.Blazor;
 
 public partial class PixaultGallery : ComponentBase
 {
-    [Inject] private PixaultAdminClient Admin { get; set; } = default!;
+    [Inject] private IPixaultAdminClient Admin { get; set; } = default!;
     [Inject] private PixaultImageService ImageService { get; set; } = default!;
 
     [Parameter] public string Project { get; set; } = "";
