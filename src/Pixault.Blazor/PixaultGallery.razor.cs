@@ -13,6 +13,10 @@ public partial class PixaultGallery : ComponentBase
     [Parameter] public string ThumbnailTransform { get; set; } = "w_400";
     [Parameter] public EventCallback<ImageMetadataDto> OnImageSelected { get; set; }
 
+    /// <summary>Max files selectable in the inline upload panel. A management gallery expects bulk
+    /// uploads, so this defaults high; lower it for consumers that want a tighter cap.</summary>
+    [Parameter] public int MaxFiles { get; set; } = 1000;
+
     private List<ImageMetadataDto> _images = [];
     private List<ImageMetadataDto> _filtered = [];
     private List<string> _folders = [];
