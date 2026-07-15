@@ -17,6 +17,10 @@ public partial class PixaultGallery : ComponentBase
     /// uploads, so this defaults high; lower it for consumers that want a tighter cap.</summary>
     [Parameter] public int MaxFiles { get; set; } = 1000;
 
+    /// <summary>Max size (MB) of a single upload in the inline panel. Forwarded to the uploader's
+    /// per-file cap; raise for large images/EPS/vector inputs, lower to restrict.</summary>
+    [Parameter] public int MaxSizeMb { get; set; } = 100;
+
     private List<ImageMetadataDto> _images = [];
     private List<ImageMetadataDto> _filtered = [];
     private List<string> _folders = [];
