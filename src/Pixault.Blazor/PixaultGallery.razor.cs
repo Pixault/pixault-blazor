@@ -37,6 +37,73 @@ public partial class PixaultGallery : ComponentBase
     private string? _selectedId;
     private string? _error;
 
+    // ── Multi-select + view mode ──
+    private enum GalleryView { Grid, List }
+    private GalleryView _view = GalleryView.Grid;
+    private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
+
+    private bool IsSelected(string id) => _selected.Contains(id);
+
+    private void ToggleSelected(string id)
+    {
+        if (!_selected.Add(id)) _selected.Remove(id);
+    }
+
+    private void ClearSelection() => _selected.Clear();
+
+    private bool AllVisibleSelected => _filtered.Count > 0 && _filtered.All(i => _selected.Contains(i.ImageId));
+
+    private void ToggleSelectAllVisible()
+    {
+        if (AllVisibleSelected)
+            foreach (var i in _filtered) _selected.Remove(i.ImageId);
+        else
+            foreach (var i in _filtered) _selected.Add(i.ImageId);
+    }
+
+    // ── Bulk operations ──
+    private bool _showBulkDelete;
+    private bool _showMove;
+    private string _moveTarget = ""; // "" = root
+    private bool _bulkBusy;
+
+    private void OpenMoveDialog()
+    {
+        _moveTarget = "";
+        _showMove = true;
+    }
+
+    private async Task ConfirmBulkDeleteAsync()
+    {
+        _bulkBusy = true;
+        StateHasChanged();
+        foreach (var id in _selected.ToList())
+        {
+            try { await Admin.DeleteImageAsync(id, project: Project); }
+            catch { /* best-effort; reload reflects what actually happened */ }
+        }
+        _showBulkDelete = false;
+        _bulkBusy = false;
+        await Task.WhenAll(LoadImagesAsync(), LoadFoldersAsync());
+        StateHasChanged();
+    }
+
+    private async Task ConfirmBulkMoveAsync()
+    {
+        _bulkBusy = true;
+        StateHasChanged();
+        // Folder = "" moves to root (endpoint maps empty → null); "path" moves into that folder.
+        foreach (var id in _selected.ToList())
+        {
+            try { await Admin.UpdateMetadataAsync(id, new MetadataUpdate { Folder = _moveTarget }, project: Project); }
+            catch { /* best-effort */ }
+        }
+        _showMove = false;
+        _bulkBusy = false;
+        await Task.WhenAll(LoadImagesAsync(), LoadFoldersAsync());
+        StateHasChanged();
+    }
+
     private List<(string Name, string Path)> BreadcrumbSegments
     {
         get
@@ -100,6 +167,7 @@ public partial class PixaultGallery : ComponentBase
         _loading = true;
         _error = null;
         _nextCursor = null;
+        _selected.Clear(); // fresh context (folder change / search / refresh) — drop stale selections
         StateHasChanged();
 
         try
