@@ -113,7 +113,7 @@ public partial class PixaultImageDetail : ComponentBase
         get
         {
             if (Image is null) return "";
-            var builder = ImageService.For(Project, Image.ImageId);
+            var builder = ImageService.For(Project, Image.PublicId ?? Image.ImageId);
             if (_urlWidth.HasValue) builder.Width(_urlWidth.Value);
             if (_urlHeight.HasValue) builder.Height(_urlHeight.Value);
             if (_urlQuality.HasValue) builder.Quality(_urlQuality.Value);

@@ -100,7 +100,7 @@ public partial class PixaultImageInsert : ComponentBase
         get
         {
             if (Image is null) return "";
-            var builder = ImageService.For(Project, Image.ImageId);
+            var builder = ImageService.For(Project, Image.PublicId ?? Image.ImageId);
             // Preview at reasonable size
             var previewWidth = _width ?? 600;
             builder = builder.Width(Math.Min(previewWidth, 800));

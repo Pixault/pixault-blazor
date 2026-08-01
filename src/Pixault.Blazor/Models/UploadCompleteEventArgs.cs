@@ -3,6 +3,7 @@ namespace Pixault.Blazor.Models;
 public sealed class UploadCompleteEventArgs
 {
     public required string ImageId { get; init; }
+    public string? PublicId { get; init; }
     public required string Url { get; init; }
     public required string FileName { get; init; }
     public required string ContentType { get; init; }

@@ -219,7 +219,7 @@ public partial class PixaultUploader : ComponentBase
             if (ShowPreview)
             {
                 var previewFormat = item.IsSvg ? "svg" : "webp";
-                item.PreviewUrl = ImageService.For(Project, response.ImageId)
+                item.PreviewUrl = ImageService.For(Project, response.PublicId ?? response.ImageId)
                     .Format(previewFormat)
                     .Build()
                     .Replace("/original.", $"/{PreviewTransform}.");
@@ -230,6 +230,7 @@ public partial class PixaultUploader : ComponentBase
             await OnUploadComplete.InvokeAsync(new UploadCompleteEventArgs
             {
                 ImageId = response.ImageId,
+                PublicId = response.PublicId,
                 Url = response.Url,
                 FileName = item.FileName,
                 ContentType = item.ContentType,
