@@ -5,6 +5,6 @@
   <ItemGroup>
     <PackageVersion Include="Pixault.Client" Version="1.6.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
-    <PackageVersion Include="Radzen.Blazor" Version="9.0.6" />
+    <PackageVersion Include="Radzen.Blazor" Version="11.2.0" />
   </ItemGroup>
 </Project>
