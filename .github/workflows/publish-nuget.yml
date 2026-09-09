@@ -76,9 +76,18 @@ jobs:
             echo "Version ${{ steps.version.outputs.version }} is new — will publish"
           fi
 
+      # Notes reach MSBuild through an env var rather than the command line, and
+      # ',' / ';' are escaped. Interpolating them directly breaks on ordinary prose: a
+      # backtick becomes command substitution, and everything after the first comma is
+      # read as a separate MSBuild switch. Both failed real publishes on 2026-09-09.
       - name: Pack
         if: steps.check.outputs.exists == 'false'
-        run: dotnet pack src/Pixault.Blazor/Pixault.Blazor.csproj -c Release --no-build -o ./nupkg -p:PackageReleaseNotes="${{ steps.notes.outputs.notes }}"
+        env:
+          NOTES: ${{ steps.notes.outputs.notes }}
+        run: |
+          ESCAPED=$(printf '%s' "$NOTES" | sed 's/%/%25/g; s/,/%2C/g; s/;/%3B/g')
+          dotnet pack src/Pixault.Blazor/Pixault.Blazor.csproj -c Release --no-build -o ./nupkg \
+            -p:PackageReleaseNotes="$ESCAPED"
 
       - name: Login to NuGet via trusted publisher
         id: nuget-login
