@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Pixault.Client" Version="1.6.0" />
+    <PackageVersion Include="Pixault.Client" Version="1.6.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
     <PackageVersion Include="Radzen.Blazor" Version="11.2.0" />
   </ItemGroup>
