@@ -63,6 +63,23 @@ jobs:
       - name: Build
         run: dotnet build src/Pixault.Blazor/Pixault.Blazor.csproj -c Release --no-restore
 
+      # Gate on tests when there are any. This package has none yet, so the step reports that
+      # and passes; it starts enforcing the moment a project appears under test/, without the
+      # workflow needing to be revisited. No --no-build: the Build step above compiles only the
+      # src project, so --no-build would find no test assembly and exit 0 having run nothing.
+      - name: Test
+        run: |
+          shopt -s nullglob
+          PROJECTS=(test/*/*.csproj test/*.csproj)
+          if [ ${#PROJECTS[@]} -eq 0 ]; then
+            echo "No test project under test/ — nothing to gate on yet."
+            exit 0
+          fi
+          for p in "${PROJECTS[@]}"; do
+            echo "Running $p"
+            dotnet test "$p" -c Release --logger "console;verbosity=normal"
+          done
+
       - name: Check if version exists on NuGet
         id: check
         run: |
