@@ -13,6 +13,13 @@ public partial class PixaultGallery : ComponentBase
     [Parameter] public string ThumbnailTransform { get; set; } = "w_400";
     [Parameter] public EventCallback<ImageMetadataDto> OnImageSelected { get; set; }
 
+    /// <summary>Whether to show the bulk-management affordances: the per-card tick boxes,
+    /// "select all", and the Move/Delete bar they drive. Leave true for a management gallery.
+    /// Set false when the gallery is a picker (an image-chooser dialog): there, a tick box reads
+    /// as "choose this one" but actually arms a bulk Delete, and it never raises
+    /// <see cref="OnImageSelected"/> because the tick box stops the click reaching the card.</summary>
+    [Parameter] public bool AllowBulkActions { get; set; } = true;
+
     /// <summary>Max files selectable in the inline upload panel. A management gallery expects bulk
     /// uploads, so this defaults high; lower it for consumers that want a tighter cap.</summary>
     [Parameter] public int MaxFiles { get; set; } = 1000;
